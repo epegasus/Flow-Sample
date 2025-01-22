@@ -11,14 +11,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.pegasus.flowsample.R
 import dev.pegasus.flowsample.TAG
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class FlowActivity : AppCompatActivity() {
@@ -69,11 +73,20 @@ class ViewModelFlow : ViewModel() {
                         it
                     }
                 }
+                .stateIn(
+                    scope = CoroutineScope(Dispatchers.Default), // Scope for sharing
+                    started = SharingStarted.WhileSubscribed(5000), // When to start/stop sharing
+                    initialValue = 1 // Initial value (current state)
+                )
+                .shareIn(
+                    scope = CoroutineScope(Dispatchers.Default), // Scope for sharing
+                    started = SharingStarted.WhileSubscribed(5000), // When to start/stop sharing
+                    replay = 1 // Number of values to replay to new collectors
+                )
                 .onEach {
                     Log.d(TAG, "startLoopInfinite: Intermediate Counter: $it")
                 }
                 .buffer()
-                .map { it.copy(value = it.value * 1000) }
                 .onEach {
                     Log.i(TAG, "startLoopInfinite: Intermediate Counter: $it")
                 }
